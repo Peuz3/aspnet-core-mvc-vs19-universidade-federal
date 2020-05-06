@@ -33,8 +33,16 @@ namespace UniversidadeFederal.Controllers
                 return NotFound();
             }
 
+            /*
             var estudante = await _context.Estudantes
-                .FirstOrDefaultAsync(m => m.EstudanteID == id);
+                .FirstOrDefaultAsync(m => m.EstudanteID == id); 
+                */
+            var estudante = await _context.Estudantes
+           .Include(s => s.Matriculas)
+               .ThenInclude(e => e.Curso)
+           .AsNoTracking()
+           .SingleOrDefaultAsync(m => m.EstudanteID == id);
+
             if (estudante == null)
             {
                 return NotFound();
