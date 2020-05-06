@@ -20,9 +20,38 @@ namespace UniversidadeFederal.Controllers
         }
 
         // GET: Estudantes
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string ordem)
         {
-            return View(await _context.Estudantes.ToListAsync());
+
+            ViewData["NomeParm"] = String.IsNullOrEmpty(ordem) ? "nome_desc" : "";
+            ViewData["DataParm"] = ordem == "Data" ? "data_desc" : "Data";
+
+            var estudantes = from alunos in _context.Estudantes
+                             select alunos;
+
+            switch (ordem)
+            {
+                case "nome_desc":
+                    estudantes = estudantes.OrderByDescending(estudante => estudante.SobreNome);
+                    break;
+
+                case "Data":
+                    estudantes = estudantes.OrderBy(estudante => estudante.DataMatricula);
+                    break;
+
+                case "data_desc":
+                    estudantes = estudantes.OrderByDescending(estudante => estudante.DataMatricula);
+                    break;
+
+                default:
+                    estudantes = estudantes.OrderBy(estudante => estudante.SobreNome);
+                    break;
+
+            }
+            
+            //return View(await _context.Estudantes.ToListAsync());
+            return View(await estudantes.AsNoTracking().ToListAsync());//Sem rastreamento
+
         }
 
         // GET: Estudantes/Details/5
