@@ -62,14 +62,28 @@ namespace UniversidadeFederal.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("EstudanteID,SobreNome,Nome,DataMatricula")] Estudante estudante)
+        public async Task<IActionResult> Create([Bind("SobreNome,Nome,DataMatricula")] Estudante estudante)
         {
-            if (ModelState.IsValid)
+
+            try
             {
-                _context.Add(estudante);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    _context.Add(estudante);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
             }
+
+            catch (DbUpdateException /* ex */)
+            {
+                //Logar o erro (descomente a variável ex e escreva um log
+                ModelState.AddModelError("", "Não foi possível salvar. " +
+                    "Tente novamente, e se o problema persistir " +
+                    "chame o suporte.");
+            }
+
+
             return View(estudante);
         }
 
@@ -101,31 +115,32 @@ namespace UniversidadeFederal.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
-            {
-                try
+            var atualizarEstudante = await _context.Estudantes.SingleOrDefaultAsync(s => s.EstudanteID == id);
+            if (await TryUpdateModelAsync<Estudante>(
+                atualizarEstudante,
+                "",
+                s => s.Nome, s => s.SobreNome, s => s.DataMatricula))
+
+                if (ModelState.IsValid)
                 {
-                    _context.Update(estudante);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!EstudanteExists(estudante.EstudanteID))
+                    try
                     {
-                        return NotFound();
+                        await _context.SaveChangesAsync();
+                        return RedirectToAction("Index");
                     }
-                    else
+                    catch (DbUpdateException /* ex */)
                     {
-                        throw;
+                        //Logar o erro (descomente a variável ex e escreva um log
+                        ModelState.AddModelError("", "Não foi possível salvar. " +
+                            "Tente novamente, e se o problema persistir " +
+                            "chame o suporte.");
                     }
                 }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(estudante);
+            return View(atualizarEstudante);
         }
 
         // GET: Estudantes/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(int? id, bool? saveChangesError = false)
         {
             if (id == null)
             {
@@ -133,10 +148,18 @@ namespace UniversidadeFederal.Controllers
             }
 
             var estudante = await _context.Estudantes
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.EstudanteID == id);
             if (estudante == null)
             {
                 return NotFound();
+            }
+
+            if (saveChangesError.GetValueOrDefault())
+            {
+                ViewData["ErrorMessage"] =
+                    "A exclusão falhou. Tente novamente e se o problema persistir " +
+                    "contate o suporte.";
             }
 
             return View(estudante);
@@ -147,10 +170,27 @@ namespace UniversidadeFederal.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var estudante = await _context.Estudantes.FindAsync(id);
-            _context.Estudantes.Remove(estudante);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            var estudante = await _context.Estudantes
+                .AsNoTracking()//Desabilita o rastreamento de dados e melhora o desempenho da aplicação
+                .SingleOrDefaultAsync(m => m.EstudanteID == id);
+
+            if(estudante == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                _context.Estudantes.Remove(estudante);
+                await _context.SaveChangesAsync();
+
+                return RedirectToAction("Index");
+            }
+            catch (DbUpdateException)
+            {
+                return RedirectToAction("Delete", new { id = id, saveChangesError = true });
+            }
+
         }
 
         private bool EstudanteExists(int id)

@@ -4,9 +4,12 @@
     ViewData["Title"] = "Delete";
 }
 
-<h2>Delete</h2>
+<h2>Deletar</h2>
 
-<h3>Are you sure you want to delete this?</h3>
+
+<p class="text-danger">@ViewData["ErrorMessage"]</p>
+
+<h3>Tem certeza que quer APAGAR este registro?</h3>
 <div>
     <h4>Estudante</h4>
     <hr />
@@ -33,7 +36,7 @@
     
     <form asp-action="Delete">
         <input type="hidden" asp-for="EstudanteID" />
-        <input type="submit" value="Delete" class="btn btn-default" /> |
-        <a asp-action="Index">Back to List</a>
+        <input type="submit" value="Deletar" class="btn btn-default" /> |
+        <a asp-action="Index">Retornar a Lista</a>
     </form>
 </div>
