@@ -20,14 +20,20 @@ namespace UniversidadeFederal.Controllers
         }
 
         // GET: Estudantes
-        public async Task<IActionResult> Index(string ordem)
+        public async Task<IActionResult> Index(string ordem,string filtro)
         {
 
             ViewData["NomeParm"] = String.IsNullOrEmpty(ordem) ? "nome_desc" : "";
             ViewData["DataParm"] = ordem == "Data" ? "data_desc" : "Data";
+            ViewData["filtro"] = filtro;
 
             var estudantes = from alunos in _context.Estudantes
                              select alunos;
+
+            if (!String.IsNullOrEmpty(filtro))
+            {
+                estudantes = estudantes.Where(s => s.SobreNome.Contains(filtro) || s.Nome.Contains(filtro));
+            }
 
             switch (ordem)
             {
