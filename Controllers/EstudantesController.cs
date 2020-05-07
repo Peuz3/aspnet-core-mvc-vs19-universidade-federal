@@ -20,12 +20,23 @@ namespace UniversidadeFederal.Controllers
         }
 
         // GET: Estudantes
-        public async Task<IActionResult> Index(string ordem,string filtro)
+        public async Task<IActionResult> Index(string ordem,string filtroAtual, string filtro, int?pagina)
         {
-
+            ViewData["ordemAtual"] = ordem;
             ViewData["NomeParm"] = String.IsNullOrEmpty(ordem) ? "nome_desc" : "";
             ViewData["DataParm"] = ordem == "Data" ? "data_desc" : "Data";
-            ViewData["filtro"] = filtro;
+            
+
+            if(filtro != null)
+            {
+                pagina = 1;
+            }
+            else
+            {
+                filtro = filtroAtual;
+            }
+
+            ViewData["filtroAtual"] = filtro;
 
             var estudantes = from alunos in _context.Estudantes
                              select alunos;
@@ -54,10 +65,12 @@ namespace UniversidadeFederal.Controllers
                     break;
 
             }
-            
-            //return View(await _context.Estudantes.ToListAsync());
-            return View(await estudantes.AsNoTracking().ToListAsync());//Sem rastreamento
 
+            int pageSize = 3;
+
+            //return View(await _context.Estudantes.ToListAsync());
+            //return View(await estudantes.AsNoTracking().ToListAsync());//Sem rastreamento
+            return View(await PaginatedList<Estudante>.CreateAsync(estudantes.AsNoTracking(), pagina ?? 1, pageSize));
         }
 
         // GET: Estudantes/Details/5
